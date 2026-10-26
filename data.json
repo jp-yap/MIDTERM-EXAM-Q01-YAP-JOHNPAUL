@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "name": "John Paul Yap",
+        "lab": "LB486",
+        "date": "2026-10-26",
+        "seats": 10,
+        "purpose": "Quiz"
+    },
+    {
+        "id": 2,
+        "name": "Gabrielle Chua",
+        "lab": "LB486",
+        "date": "2026-10-26",
+        "seats": 10,
+        "purpose": "Quiz"
+    },
+    {
+        "id": 3,
+        "name": "Julia Albano",
+        "lab": "LB486",
+        "date": "2026-10-26",
+        "seats": 10,
+        "purpose": "Quiz"
+    }
+]

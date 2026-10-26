@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Reservation</title>
+    <style>
+        * button {
+            padding: 8px 12px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .search {
+            margin-bottom: 20px;
+        }
+
+        .search input {
+            padding: 8px;
+        }
+
+        .search button {
+            padding: 8px 12px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        form input {
+            padding: 8px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .reservation-table table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .reservation-table th,
+        .reservation-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .reservation-table th {
+            background-color: #f8f8f8;
+        }
+
+        .delete {
+            margin-bottom: 20px;
+        }
+
+        .delete input {
+            padding: 8px;
+        }
+
+        .delete button {
+            padding: 8px 12px;
+        }
+
+        #message {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Computer Lab Reservation</h1>
+
+    <h2>Reserve Seats</h2>
+
+    <form id="reservationForm">
+        <input
+            type="text"
+            id="name"
+            placeholder="Student Name"
+            required
+        >
+
+        <input
+            type="text"
+            id="lab"
+            placeholder="Lab"
+            required
+        >
+
+        <input
+            type="date"
+            id="date"
+            placeholder="Date"
+            required
+        >
+
+        <input
+            type="number"
+            id="seats"
+            placeholder="Number of Seats"
+            required
+        >
+
+        <input
+            type="text"
+            id="purpose"
+            placeholder="Purpose"
+            required
+        >
+
+        <button type="submit">Reserve</button>
+    </form>
+
+    <div id="message"></div>
+
+    <h2>Reservations</h2>
+
+    <button onclick="loadReservations()">Load Reservations</button>
+
+    <div class="search">
+        <input
+            type="number"
+            id="search-id"
+            placeholder="Reservation ID"
+        >
+        <button onclick="searchReservation()">Search</button>
+    </div>
+
+    <div class="reservation-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Student Name</th>
+                    <th>Lab</th>
+                    <th>Date</th>
+                    <th>Number of Seats</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody id="reservationTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="delete">
+        <input
+            type="number"
+            id="delete-id"
+            placeholder="Reservation ID"
+        >
+        <button onclick="deleteReservation()">Delete</button>
+    </div>
+
+    <script>
+        async function loadReservations() {
+            try {
+                const response = await fetch("/api/reservations");
+                const reservations = await response.json();
+                const tableBody = document.getElementById("reservationTableBody");
+
+                tableBody.innerHTML = "";
+
+                reservations.forEach(reservation => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${reservation.id}</td>
+                        <td>${reservation.name}</td>
+                        <td>${reservation.lab}</td>
+                        <td>${reservation.date}</td>
+                        <td>${reservation.seats}</td>
+                        <td>${reservation.purpose}</td>
+                    `;
+
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                document.getElementById("message").textContent =
+                    "Unable to load reservations.";
+            }
+        }
+
+        async function searchReservation(){
+            const id = document.getElementById("search-id").value;
+            const tableBody = document.getElementById("reservationTableBody");
+
+            if (!id){
+                alert("Enter a Reservation ID.");
+                return;
+            }
+
+            const response = await fetch(`/api/reservations/${id}`);
+
+            if (!response.ok){
+                tableBody.innerHTML = "";
+                alert("Reservation item not found!");
+                return;
+            }
+
+            const reservation = await response.json();
+        
+            tableBody.innerHTML = "";
+
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${reservation.id}</td>
+                    <td>${reservation.name}</td>
+                    <td>${reservation.lab}</td>
+                    <td>${reservation.date}</td>
+                    <td>${reservation.seats}</td>
+                    <td>${reservation.purpose}</td>
+                    `;
+                
+                    tableBody.appendChild(row);
+        }
+
+        async function deleteReservation(){
+            const id = document.getElementById("delete-id").value;
+            const tableBody = document.getElementById("reservationTableBody");
+
+            if (!id){
+                alert("Enter a Reservation ID.");
+                return;
+            }
+
+            try{
+                const response = await fetch(`/api/reservations/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok){
+                    alert(data.message || "Reservation item not found!");
+                    return;
+                }
+
+                alert(data.message);
+                document.getElementById("delete-id").value = "";
+                await loadReservations();
+            } catch (error) {
+                document.getElementById("message").textContent =
+                    "Unable to delete reservation.";
+            }
+        }
+
+        document.getElementById("reservationForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const reservation = {
+                name: document.getElementById("name").value.trim(),
+                lab: document.getElementById("lab").value.trim(),
+                date: document.getElementById("date").value,
+                seats: document.getElementById("seats").value,
+                purpose: document.getElementById("purpose").value.trim(),
+            };
+
+            try {
+                const response = await fetch("/api/reservations", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(reservation)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    document.getElementById("message").textContent = result.message;
+                    return;
+                }
+
+                document.getElementById("message").textContent =
+                    "Reservation added successfully!";
+
+                document.getElementById("reservationForm").reset();
+
+                // Refresh the reservation list after adding a reservation
+                await loadReservations();
+            } catch (error) {
+                document.getElementById("message").textContent =
+                    "Unable to add reservation.";
+            }
+        });
+    </script>
+
+</body>
+</html>
